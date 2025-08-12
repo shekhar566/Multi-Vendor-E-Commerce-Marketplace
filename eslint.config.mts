@@ -1,35 +1,37 @@
 // eslint.config.mts
 import { dirname } from "path";
 import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
-import { defineConfig } from "eslint/config";
 
+import { FlatCompat } from "@eslint/eslintrc";
 import js from "@eslint/js";
-import globals from "globals";
-import tseslint, { plugin } from "typescript-eslint";
+import { defineConfig } from "eslint/config";
 import pluginReact from "eslint-plugin-react";
+import globals from "globals";
+import tseslint from "typescript-eslint";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const compat = new FlatCompat({ baseDirectory: __dirname });
 
 export default defineConfig([
+  // JS defaults
   {
     files: ["**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
     plugins: { js },
     extends: ["js/recommended"],
     languageOptions: { globals: globals.browser },
   },
-  // Spread only if it's an array
-  ...(tseslint.configs.recommended as any),
-  pluginReact.configs.flat.recommended, // pass directly
-  ...compat.extends(
-    "next/core-web-vitals",
-    "next/typescript",
-    // "plugin:tailwindcss/recommended",
-    "prettier"
-  ),
 
+  // TypeScript rules
+  ...(tseslint.configs.recommended as never),
+
+  // React rules
+  pluginReact.configs.flat.recommended,
+
+  // Next.js + Prettier (Tailwind removed for now)
+  ...compat.extends("next/core-web-vitals", "next/typescript", "prettier"),
+
+  // Custom rules
   {
     rules: {
       "import/order": [
@@ -43,19 +45,20 @@ export default defineConfig([
             "index",
             "object",
           ],
-
           "newlines-between": "always",
-
           pathGroups: [
             {
-              pattern: "@app/**",
+              pattern: "react",
               group: "external",
+              position: "before", // always first in externals
+            },
+            {
+              pattern: "@app/**",
+              group: "internal",
               position: "after",
             },
           ],
-
           pathGroupsExcludedImportTypes: ["builtin"],
-
           alphabetize: {
             order: "asc",
             caseInsensitive: true,
@@ -63,12 +66,6 @@ export default defineConfig([
         },
       ],
       "comma-dangle": "off",
-    },
-  },
-  {
-    files: ["**/*.ts", "**/*.tsx"],
-
-    rules: {
       "no-undef": "off",
     },
   },
