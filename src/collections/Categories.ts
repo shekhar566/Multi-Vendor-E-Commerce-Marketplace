@@ -38,5 +38,5 @@ export const Categories: CollectionConfig = {
     },
   ],
 
-  upload: true,
+  // upload: true,
 };
