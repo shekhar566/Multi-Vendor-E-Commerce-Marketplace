@@ -6,6 +6,7 @@ import { FlatCompat } from "@eslint/eslintrc";
 import js from "@eslint/js";
 import { defineConfig } from "eslint/config";
 import pluginReact from "eslint-plugin-react";
+import tailwind from "eslint-plugin-tailwindcss";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
@@ -28,8 +29,16 @@ export default defineConfig([
   // React rules
   pluginReact.configs.flat.recommended,
 
-  // Next.js + Prettier (Tailwind removed for now)
+  // Next.js + Prettier
   ...compat.extends("next/core-web-vitals", "next/typescript", "prettier"),
+
+  // TailwindCSS rules
+  {
+    plugins: { tailwind },
+    rules: {
+      ...tailwind.configs.recommended.rules, // ✅ Enables Tailwind recommended linting
+    },
+  },
 
   // Custom rules
   {
