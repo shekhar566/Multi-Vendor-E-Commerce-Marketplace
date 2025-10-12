@@ -165,6 +165,7 @@ const seed = async () => {
   const payload = await getPayload({ config });
 
   for (const category of categories) {
+    // Create parent category
     const parentCategory = await payload.create({
       collection: "categories",
       data: {
@@ -175,6 +176,7 @@ const seed = async () => {
       },
     });
 
+    // Create subcategories
     for (const subCategory of category.subcategories || []) {
       await payload.create({
         collection: "categories",
@@ -186,13 +188,14 @@ const seed = async () => {
       });
     }
   }
+
+  console.log("✅ Seeding complete successfully");
 };
 
 try {
   await seed();
-  console.log("Seeding complete successfully");
-  process.exit(0);
   process.exit(0);
 } catch (error) {
-  console.error(1);
+  console.error(error);
+  process.exit(1);
 }
