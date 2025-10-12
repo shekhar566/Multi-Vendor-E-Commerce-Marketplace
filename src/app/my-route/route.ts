@@ -12,5 +12,3 @@ export const GET = async () => {
 
   return Response.json(data);
 };
-
-// "PAYLOAD_CONFIG_PATH='./src/payload.config.ts' payload generate:types"
