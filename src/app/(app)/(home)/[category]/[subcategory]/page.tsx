@@ -1,3 +1,4 @@
+import { DEFAULT_LIMIT } from "@/constants";
 import { laodProductFilters } from "@/modules/products/search-params";
 import { ProductListViews } from "@/modules/products/ui/views/product-list-view";
 import { getQueryClient, trpc } from "@/trpc/server";
@@ -18,8 +19,12 @@ const page = async ({ params, searchParams }: Props) => {
   console.log(JSON.stringify(filters), "THIS IS FROM RSC");
 
   const queryClient = getQueryClient();
-  void queryClient.prefetchQuery(
-    trpc.products.getMany.queryOptions({ category: subcategory, ...filters })
+  void queryClient.prefetchInfiniteQuery(
+    trpc.products.getMany.infiniteQueryOptions({
+      category: subcategory,
+      ...filters,
+      limit: DEFAULT_LIMIT,
+    })
   );
 
   return (

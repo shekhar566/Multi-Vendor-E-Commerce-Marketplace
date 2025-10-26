@@ -36,6 +36,7 @@ export const Products: CollectionConfig = {
       name: "image",
       type: "upload",
       relationTo: "media",
+      required: false,
     },
     {
       name: "refundpolicy",
@@ -44,5 +45,5 @@ export const Products: CollectionConfig = {
       defaultValue: "30-day",
     },
   ],
-  //   timestamps: true,
+  timestamps: true,
 };
