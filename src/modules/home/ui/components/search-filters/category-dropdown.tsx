@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 import { useRef, useState } from "react";
-import { useDropdownPosition } from "./use-dropdown-position";
+
 import { SubcategoryMenu } from "./subcategory-menu";
 import { CategoriesGetManyOutput } from "@/modules/categories/types";
 import Link from "next/link";
@@ -21,7 +21,6 @@ export const CategoryDropdown = ({
 }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDListElement>(null);
-  const { getDropdownPosition } = useDropdownPosition(dropdownRef);
 
   const onMouseEnter = () => {
     if (category) {
@@ -31,8 +30,6 @@ export const CategoryDropdown = ({
   };
 
   const onMouseLeave = () => setIsOpen(false);
-
-  const dropdownPosition = getDropdownPosition();
 
   return (
     <div
@@ -68,11 +65,7 @@ export const CategoryDropdown = ({
         )}
       </div>
 
-      <SubcategoryMenu
-        category={category}
-        isOpen={isOpen}
-        position={dropdownPosition}
-      />
+      <SubcategoryMenu category={category} isOpen={isOpen} />
     </div>
   );
 };
