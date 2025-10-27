@@ -11,9 +11,9 @@ export const ProductSort = () => {
       <Button
         size="sm"
         className={cn(
-          "rounded-full bg-white hover:bg-white",
+          "rounded-full bg-white hover:bg-white border",
           filters.sort !== "curated" &&
-            "bg-transparent border-transparent hover:border-border  hover:bg-transparent"
+            "bg-transparent border-transparent hover:border-border border  hover:bg-transparent"
         )}
         variant="secondary"
         onClick={() => setFilters({ sort: "curated" })}
@@ -23,9 +23,9 @@ export const ProductSort = () => {
       <Button
         size="sm"
         className={cn(
-          "rounded-full bg-white hover:bg-white",
+          "rounded-full bg-white hover:bg-white border",
           filters.sort !== "trending" &&
-            "bg-transparent border-transparent hover:border-border hover:bg-transparent"
+            "bg-transparent border-transparent hover:border-border border hover:bg-transparent"
         )}
         variant="secondary"
         onClick={() => setFilters({ sort: "trending" })}
@@ -35,9 +35,9 @@ export const ProductSort = () => {
       <Button
         size="sm"
         className={cn(
-          "rounded-full bg-white hover:bg-white",
+          "rounded-full bg-white hover:bg-white border",
           filters.sort !== "hot_and_new" &&
-            "bg-transparent border-transparent hover:border-border hover:bg-transparent"
+            "bg-transparent border-transparent hover:border-border border hover:bg-transparent"
         )}
         variant="secondary"
         onClick={() => setFilters({ sort: "hot_and_new" })}

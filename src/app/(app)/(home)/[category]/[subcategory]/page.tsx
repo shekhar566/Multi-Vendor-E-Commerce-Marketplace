@@ -1,6 +1,6 @@
 import { DEFAULT_LIMIT } from "@/constants";
 import { laodProductFilters } from "@/modules/products/search-params";
-import { ProductListViews } from "@/modules/products/ui/views/product-list-view";
+import { ProductListView } from "@/modules/products/ui/views/product-list-view";
 import { getQueryClient, trpc } from "@/trpc/server";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { SearchParams } from "nuqs/server";
@@ -29,7 +29,7 @@ const page = async ({ params, searchParams }: Props) => {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <ProductListViews category={subcategory} />
+      <ProductListView category={subcategory} />
     </HydrationBoundary>
   );
 };
