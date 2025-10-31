@@ -22,13 +22,25 @@ function getQueryClient() {
   if (!browserQueryClient) browserQueryClient = makeQueryClient();
   return browserQueryClient;
 }
+// function getUrl() {
+//   const base = (() => {
+//     if (typeof window !== "undefined") return "";
+//     return process.env.NEXT_PUBLIC_APP_URL;
+//   })();
+//   return `${base}/api/trpc`;
+// }
 function getUrl() {
   const base = (() => {
     if (typeof window !== "undefined") return "";
+    console.log("🌍 Server base URL:", process.env.NEXT_PUBLIC_APP_URL);
     return process.env.NEXT_PUBLIC_APP_URL;
   })();
-  return `${base}/api/trpc`;
+
+  const fullUrl = `${base}/api/trpc`;
+  console.log("🚀 Final TRPC URL:", fullUrl);
+  return fullUrl;
 }
+
 export function TRPCReactProvider(
   props: Readonly<{
     children: React.ReactNode;
