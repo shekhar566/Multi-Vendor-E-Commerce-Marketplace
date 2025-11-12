@@ -16,6 +16,7 @@ export const ProductView = ({ productId }: Props) => {
       productId,
     })
   );
+
   return (
     <div className="min-h-screen bg-white">
       <nav className="p-4 bg-[#F4F4F0] w-full border-b">
