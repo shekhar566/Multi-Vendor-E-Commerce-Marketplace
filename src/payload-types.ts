@@ -176,6 +176,9 @@ export interface Tenant {
    */
   slug: string;
   image?: (string | null) | Media;
+  /**
+   * Stripe Account ID associated with your shop
+   */
   stripeAccountId: string;
   /**
    * You cannot create products until you submit your Stripe details
@@ -247,6 +250,10 @@ export interface Product {
   tags?: (string | Tag)[] | null;
   image?: (string | null) | Media;
   refundpolicy?: ('30-day' | '14-day' | '7-day' | '3-day' | '1-day' | 'no-refunds') | null;
+  /**
+   * Protected content only visible to the customers after purchase. Add product documentation, downloadable files, getting starter guides, and bonus matierial. Support markdown formatting
+   */
+  content?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -270,6 +277,9 @@ export interface Order {
   name: string;
   user: string | User;
   product: string | Product;
+  /**
+   * Stripe checkout session associated with the order
+   */
   stripeCheckoutSessionId: string;
   updatedAt: string;
   createdAt: string;
@@ -286,15 +296,6 @@ export interface Review {
   user: string | User;
   updatedAt: string;
   createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -460,6 +461,7 @@ export interface ProductsSelect<T extends boolean = true> {
   tags?: T;
   image?: T;
   refundpolicy?: T;
+  content?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -509,15 +511,6 @@ export interface ReviewsSelect<T extends boolean = true> {
   user?: T;
   updatedAt?: T;
   createdAt?: T;
-  url?: T;
-  thumbnailURL?: T;
-  filename?: T;
-  mimeType?: T;
-  filesize?: T;
-  width?: T;
-  height?: T;
-  focalX?: T;
-  focalY?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
