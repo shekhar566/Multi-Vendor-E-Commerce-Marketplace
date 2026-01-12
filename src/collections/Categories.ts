@@ -44,5 +44,4 @@ export const Categories: CollectionConfig = {
       hasMany: true,
     },
   ],
-  upload: true,
 };
