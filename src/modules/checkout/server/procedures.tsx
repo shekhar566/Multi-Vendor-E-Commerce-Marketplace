@@ -9,8 +9,6 @@ import { TRPCError } from "@trpc/server";
 import type Stripe from "stripe";
 import { CheckoutMetadata, ProductMetadata } from "../types";
 import { stripe } from "@/lib/stripe";
-import { verify } from "crypto";
-import { it } from "date-fns/locale";
 import { PLATFORM_FEE_PERCENTAGE } from "@/constants";
 
 export const checkoutRouter = createTRPCRouter({
@@ -79,6 +77,11 @@ export const checkoutRouter = createTRPCRouter({
                 equals: input.tenantSlug,
               },
             },
+            {
+              isArchived: {
+                not_equals: true,
+              },
+            },
           ],
         },
       });
@@ -116,6 +119,15 @@ export const checkoutRouter = createTRPCRouter({
           message: "Tenant not allowed to sell products",
         });
       }
+      // if (
+      //   process.env.NODE_ENV === "production" &&
+      //   !tenant.stripeDetailsSubmitted
+      // ) {
+      //   throw new TRPCError({
+      //     code: "BAD_REQUEST",
+      //     message: "Tenant not allowed to sell products",
+      //   });
+      // }
 
       const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] =
         products.docs.map((product) => ({
@@ -184,9 +196,18 @@ export const checkoutRouter = createTRPCRouter({
         collection: "products",
         depth: 2, // Populate "category" , "image", "tenant" and "tenant.image"
         where: {
-          id: {
-            in: input.ids,
-          },
+          and: [
+            {
+              id: {
+                in: input.ids,
+              },
+            },
+            {
+              isArchived: {
+                not_equals: true,
+              },
+            },
+          ],
         },
       });
 
