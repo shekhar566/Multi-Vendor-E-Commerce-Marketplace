@@ -23,11 +23,11 @@ export const CategoriesSidebar = ({ open, onOpenChange }: Props) => {
   const { data } = useQuery(trpc.categories.getMany.queryOptions());
   const router = useRouter();
 
-  const [parentCategories, setParentCategories] = useState<
-    CategoriesGetManyOutput[] | null
-  >(null);
+  const [parentCategories, setParentCategories] =
+    useState<CategoriesGetManyOutput | null>(null);
+
   const [selectedCategory, setSelectedCategory] = useState<
-    CategoriesGetManyOutput[1] | null
+    CategoriesGetManyOutput[number] | null
   >(null);
 
   const currentCategories = parentCategories ?? data ?? [];
@@ -38,7 +38,7 @@ export const CategoriesSidebar = ({ open, onOpenChange }: Props) => {
     onOpenChange(open);
   };
 
-  const handleCategoryClick = (category: CategoriesGetManyOutput[1]) => {
+  const handleCategoryClick = (category: CategoriesGetManyOutput[number]) => {
     if (category.subcategories && category.subcategories.length > 0) {
       setParentCategories(category.subcategories as CategoriesGetManyOutput);
       setSelectedCategory(category);
@@ -62,7 +62,9 @@ export const CategoriesSidebar = ({ open, onOpenChange }: Props) => {
       setSelectedCategory(null);
     }
   };
+
   const backgroundColor = selectedCategory?.color || "white";
+
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent
@@ -87,7 +89,9 @@ export const CategoriesSidebar = ({ open, onOpenChange }: Props) => {
           {currentCategories?.map((category) => (
             <button
               key={category.slug}
-              onClick={() => handleCategoryClick(category)}
+              onClick={() =>
+                handleCategoryClick(category as CategoriesGetManyOutput[number])
+              }
               className="w-full text-left p-4 hover:bg-black hover:text-white flex justify-between 
               items-center text-base font-medium cursor-pointer"
             >

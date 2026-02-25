@@ -5,7 +5,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { LoaderIcon } from "lucide-react";
 
 interface TagsFilterProps {
-  value?: string | null;
+  value?: string[];
   onChange: (value: string[]) => void;
 }
 export const TagsFilter = ({ value, onChange }: TagsFilterProps) => {

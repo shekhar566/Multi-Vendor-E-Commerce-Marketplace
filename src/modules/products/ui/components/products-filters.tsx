@@ -83,7 +83,7 @@ export const ProductFilters = () => {
       </ProductFilter>
       <ProductFilter title="Tags" className="border-b-0">
         <TagsFilter
-          value={filters.tags}
+          value={filters.tags as any}
           onChange={(value) => onChange("tags", value)}
         />
       </ProductFilter>

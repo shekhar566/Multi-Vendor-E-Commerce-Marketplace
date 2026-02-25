@@ -10,6 +10,8 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
+export const dynamic = "force-dynamic";
+
 const Page = async ({ searchParams, params }: Props) => {
   const { slug } = await params;
   const filters = await laodProductFilters(searchParams);

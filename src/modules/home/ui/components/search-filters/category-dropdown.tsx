@@ -9,7 +9,7 @@ import { CategoriesGetManyOutput } from "@/modules/categories/types";
 import Link from "next/link";
 
 interface Props {
-  category: CategoriesGetManyOutput[1];
+  category: CategoriesGetManyOutput[number];
   isActive?: boolean;
   isNavigationHovered?: boolean;
 }
@@ -20,7 +20,7 @@ export const CategoryDropdown = ({
   isNavigationHovered,
 }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDListElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const onMouseEnter = () => {
     if (category) {
