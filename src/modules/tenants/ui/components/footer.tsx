@@ -15,7 +15,7 @@ export const Footer = () => {
       lg:px-12"
       >
         <p>Powered by</p>
-        <Link href="/">
+        <Link href={process.env.NEXT_PUBLIC_APP_URL!}>
           <span className={cn("text-2xl font-semibold", poppins.className)}>
             funroad
           </span>
