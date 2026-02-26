@@ -6,8 +6,12 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function generateTenantURL(tenantSlug: string) {
-  // In development mode, use normal routing
-  if (process.env.NODE_ENV === "development") {
+  const isDevelopment = process.env.NODE_ENV === "development";
+  const isSubdoaminRoutingEnabled = Boolean(
+    process.env.NEXT_PUBLIC_ENABLE_SUBDOMAIN_ROUTING!
+  );
+  // In development or subdomain routing disabaled mode, use normal routing
+  if (isDevelopment || !isSubdoaminRoutingEnabled) {
     return `${process.env.NEXT_PUBLIC_APP_URL}/tenants/${tenantSlug}`;
   }
   const protocol = "https";
