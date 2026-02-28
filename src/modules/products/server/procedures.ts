@@ -1,11 +1,12 @@
+import { TRPCError } from "@trpc/server";
+import { headers as getHearders } from "next/headers";
+import type { Sort, Where } from "payload";
 import z, { object } from "zod";
+
+import { DEFAULT_LIMIT } from "@/constants";
+import { sortValues } from "@/modules/products/search-params";
 import { Category, Media, Tenant } from "@/payload-types";
 import { baseProcedure, createTRPCRouter } from "@/trpc/init";
-import type { Sort, Where } from "payload";
-import { headers as getHearders } from "next/headers";
-import { sortValues } from "@/modules/products/search-params";
-import { DEFAULT_LIMIT } from "@/constants";
-import { TRPCError } from "@trpc/server";
 
 export const productsRouter = createTRPCRouter({
   getOne: baseProcedure
@@ -116,6 +117,7 @@ export const productsRouter = createTRPCRouter({
       z.object({
         cursor: z.number().default(1),
         limit: z.number().default(DEFAULT_LIMIT),
+        search: z.string().nullable().optional(),
         category: z.string().nullable().optional(),
         minPrice: z.string().nullable().optional(),
         maxPrice: z.string().nullable().optional(),
@@ -211,6 +213,13 @@ export const productsRouter = createTRPCRouter({
           in: input.tags,
         };
       }
+
+      if (input.search) {
+        where["name"] = {
+          like: input.search,
+        };
+      }
+
       const data = await ctx.db.find({
         collection: "products",
         depth: 2, // Populate "category" , "image", "tenant" and "tenant.image"
