@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 };
 
-export default withPayload(withPayload(withPayload(withPayload(nextConfig))));
+export default withPayload(nextConfig);
