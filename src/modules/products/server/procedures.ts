@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
-import { headers as getHearders } from "next/headers";
+import { headers as getHeaders } from "next/headers";
 import type { Sort, Where } from "payload";
-import z, { object } from "zod";
+import z from "zod";
 
 import { DEFAULT_LIMIT } from "@/constants";
 import { sortValues } from "@/modules/products/search-params";
@@ -16,7 +16,7 @@ export const productsRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const headers = await getHearders();
+      const headers = await getHeaders();
       const session = await ctx.db.auth({ headers });
 
       const product = await ctx.db.findByID({
@@ -24,19 +24,20 @@ export const productsRouter = createTRPCRouter({
         id: input.id,
         depth: 2,
         select: {
-          content: false,
+          content: false, // We keep the final deliverables locked here
         },
       });
 
       if (product.isArchived) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Product not found",
+          message: "Invoice not found",
         });
       }
 
       let isPurchased = false;
 
+      // Check if the client has paid this invoice
       if (session.user) {
         const ordersData = await ctx.db.find({
           collection: "orders",
@@ -60,58 +61,16 @@ export const productsRouter = createTRPCRouter({
         isPurchased = !!ordersData.docs[0];
       }
 
-      const reviews = await ctx.db.find({
-        collection: "reviews",
-        pagination: false,
-        where: {
-          product: {
-            equals: input.id,
-          },
-        },
-      });
-
-      const reviewRating =
-        reviews.docs.length > 0
-          ? reviews.docs.reduce((acc, review) => acc + review.rating, 0) /
-            reviews.totalDocs
-          : 0;
-
-      const ratingDistribution: Record<number, number> = {
-        5: 0,
-        4: 0,
-        3: 0,
-        2: 0,
-        1: 0,
-      };
-
-      if (reviews.totalDocs > 0) {
-        reviews.docs.forEach((review) => {
-          const rating = review.rating;
-
-          if (rating >= 1 && rating <= 5) {
-            ratingDistribution[rating] = (ratingDistribution[rating] || 0) + 1;
-          }
-        });
-
-        Object.keys(ratingDistribution).forEach((key) => {
-          const rating = Number(key);
-          const count = ratingDistribution[rating] || 0;
-          ratingDistribution[rating] = Math.round(
-            (count / reviews.totalDocs) * 100
-          );
-        });
-      }
+      // STRIPPED: Removed all E-commerce review and rating logic
 
       return {
         ...product,
         isPurchased,
         image: product.image as Media | null,
         tenant: product.tenant as Tenant & { image: Media | null },
-        reviewRating,
-        reviewCount: reviews.totalDocs,
-        ratingDistribution,
       };
     }),
+
   getMany: baseProcedure
     .input(
       z.object({
@@ -124,6 +83,7 @@ export const productsRouter = createTRPCRouter({
         tags: z.array(z.string()).nullable().optional(),
         sort: z.enum(sortValues).nullable().optional(),
         tenantSlug: z.string().nullable().optional(),
+        paymentStatus: z.string().nullable().optional(), // NEW: Added ability to filter by Status
       })
     )
     .query(async ({ ctx, input }) => {
@@ -134,15 +94,9 @@ export const productsRouter = createTRPCRouter({
       };
       let sort: Sort = "-createdAt";
 
-      if (input.sort === "curated") {
+      if (input.sort === "curated" || input.sort === "trending")
         sort = "-createdAt";
-      }
-      if (input.sort === "hot_and_new") {
-        sort = "+createdAt";
-      }
-      if (input.sort === "trending") {
-        sort = "-createdAt";
-      }
+      if (input.sort === "hot_and_new") sort = "+createdAt";
 
       if (input.minPrice && input.maxPrice) {
         where.price = {
@@ -150,26 +104,20 @@ export const productsRouter = createTRPCRouter({
           less_than_equal: input.maxPrice,
         };
       } else if (input.minPrice) {
-        where.price = {
-          greater_than_equal: input.minPrice,
-        };
+        where.price = { greater_than_equal: input.minPrice };
       } else if (input.maxPrice) {
-        where.price = {
-          less_than_equal: input.maxPrice,
-        };
+        where.price = { less_than_equal: input.maxPrice };
       }
 
       if (input.tenantSlug) {
-        where["tenant.slug"] = {
-          equals: input.tenantSlug,
-        };
+        where["tenant.slug"] = { equals: input.tenantSlug };
       } else {
-        // If we are loading products for public storefont (no tenantSlug)
-        // Make sure to not load products set to "isPrivate: true"(using reverse nit equals logic)
-        // this producs are exclusively private to the tenant store
-        where["isPrivate"] = {
-          not_equals: true,
-        };
+        where["isPrivate"] = { not_equals: true };
+      }
+
+      // NEW: Apply the payment status filter if the frontend asks for it
+      if (input.paymentStatus) {
+        where["paymentStatus"] = { equals: input.paymentStatus };
       }
 
       if (input.category) {
@@ -209,20 +157,16 @@ export const productsRouter = createTRPCRouter({
       }
 
       if (input.tags && input.tags.length > 0) {
-        where["tags.name"] = {
-          in: input.tags,
-        };
+        where["tags.name"] = { in: input.tags };
       }
 
       if (input.search) {
-        where["name"] = {
-          like: input.search,
-        };
+        where["name"] = { like: input.search };
       }
 
       const data = await ctx.db.find({
         collection: "products",
-        depth: 2, // Populate "category" , "image", "tenant" and "tenant.image"
+        depth: 2,
         where,
         sort,
         page: input.cursor,
@@ -231,34 +175,12 @@ export const productsRouter = createTRPCRouter({
           content: false,
         },
       });
-      const dataWithSummarizedReviews = await Promise.all(
-        data.docs.map(async (doc) => {
-          const reviewData = await ctx.db.find({
-            collection: "reviews",
-            pagination: false,
-            where: {
-              product: {
-                equals: doc.id,
-              },
-            },
-          });
-          return {
-            ...doc,
-            reviewCount: reviewData.totalDocs,
-            reviewRating:
-              reviewData.docs.length === 0
-                ? 0
-                : reviewData.docs.reduce(
-                    (acc, review) => acc + review.rating,
-                    0
-                  ) / reviewData.totalDocs,
-          };
-        })
-      );
+
+      // STRIPPED: Removed the massive Promise.all that fetched reviews for every single product in the list
 
       return {
         ...data,
-        docs: dataWithSummarizedReviews.map((doc) => ({
+        docs: data.docs.map((doc) => ({
           ...doc,
           image: doc.image as Media | null,
           tenant: doc.tenant as Tenant & { image: Media | null },

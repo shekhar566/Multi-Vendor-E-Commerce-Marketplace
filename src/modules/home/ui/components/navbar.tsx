@@ -1,8 +1,6 @@
 "use client";
 import { useState } from "react";
-
-import { MenuIcon } from "lucide-react";
-import { Poppins } from "next/font/google";
+import { MenuIcon, CommandIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -12,11 +10,6 @@ import { cn } from "@/lib/utils";
 import { NavbarSidebar } from "./navbarSidebar";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
-
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["700"],
-});
 
 interface NavbarItemProps {
   href: string;
@@ -28,10 +21,10 @@ const NavbarItem = ({ href, children, isActive }: NavbarItemProps) => {
   return (
     <Button
       asChild
-      variant="outline"
+      variant="ghost"
       className={cn(
-        "bg-transparent hover:bg-transparent rounded-full hover:border-primary border-transparent px-3.5 text-lg",
-        isActive && "bg-black text-white hover:bg-black hover:text-white"
+        "bg-transparent hover:bg-neutral-100 rounded-full px-4 text-sm font-medium transition-colors",
+        isActive && "bg-neutral-100 text-neutral-900"
       )}
     >
       <Link href={href}>{children}</Link>
@@ -39,11 +32,10 @@ const NavbarItem = ({ href, children, isActive }: NavbarItemProps) => {
   );
 };
 
+// Simplified for a B2B Agency Landing Page
 const navbarItems = [
-  { href: "/", children: "Home" },
-  { href: "/about", children: "About" },
-  { href: "/features", children: "Features" },
-  { href: "/pricing", children: "Pricing" },
+  { href: "/", children: "Overview" },
+  { href: "/features", children: "Services" },
   { href: "/contact", children: "Contact" },
 ];
 
@@ -55,10 +47,13 @@ export const Navbar = () => {
   const session = useQuery(trpc.auth.session.queryOptions());
 
   return (
-    <nav className="h-20 flex border-b justify-between font-medium bg-white">
-      <Link href="/" className="pl-6 flex items-center">
-        <span className={cn("text-5xl font-semibold", poppins.className)}>
-          funroad
+    <nav className="h-16 flex border-b justify-between items-center bg-white px-6">
+      <Link href="/" className="flex items-center gap-2">
+        <div className="bg-neutral-900 p-1.5 rounded-md">
+          <CommandIcon className="size-5 text-white" />
+        </div>
+        <span className="text-xl font-bold tracking-tight text-neutral-900">
+          AgencyPortal
         </span>
       </Link>
 
@@ -68,7 +63,7 @@ export const Navbar = () => {
         onOpenChange={setisSidebaropen}
       />
 
-      <div className="items-center gap-4 hidden lg:flex">
+      <div className="items-center gap-1 hidden lg:flex">
         {navbarItems.map((item) => (
           <NavbarItem
             key={item.href}
@@ -84,31 +79,28 @@ export const Navbar = () => {
         <div className="hidden lg:flex">
           <Button
             asChild
-            className="border-l border-t-0 border-b-0 border-r-0 px-12 h-full rounded-none bg-black
-          text-white hover:bg-pink-400 hover:text-black transition-colors text-lg "
+            className="rounded-full bg-neutral-900 text-white hover:bg-neutral-800 transition-colors px-6"
           >
-            <Link href="/admin">Dashboard</Link>
+            <Link href="/admin">Admin Dashboard</Link>
           </Button>
         </div>
       ) : (
-        <div className="hidden lg:flex">
+        <div className="hidden lg:flex items-center gap-2">
           <Button
             asChild
-            variant="secondary"
-            className="border-l border-t-0 border-b-0 border-r-0 px-12 h-full rounded-none bg-white
-          hover:bg-pink-400 transition-colors text-lg "
+            variant="ghost"
+            className="rounded-full hover:bg-neutral-100 transition-colors px-6"
           >
             <Link prefetch href="/sign-in">
-              Login
+              Client Login
             </Link>
           </Button>
           <Button
             asChild
-            className="border-l border-t-0 border-b-0 border-r-0 px-12 h-full rounded-none bg-black
-          text-white hover:bg-pink-400 hover:text-black transition-colors text-lg "
+            className="rounded-full bg-neutral-900 text-white hover:bg-neutral-800 transition-colors px-6"
           >
-            <Link prefetch href="/sign-up">
-              Start selling
+            <Link prefetch href="/contact">
+              Work With Us
             </Link>
           </Button>
         </div>
@@ -117,10 +109,10 @@ export const Navbar = () => {
       <div className="flex lg:hidden items-center justify-center">
         <Button
           variant="ghost"
-          className="size-12 border-transparent"
+          className="size-10 border-transparent p-0"
           onClick={() => setisSidebaropen(true)}
         >
-          <MenuIcon />
+          <MenuIcon className="size-5" />
         </Button>
       </div>
     </nav>

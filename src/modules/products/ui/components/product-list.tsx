@@ -3,7 +3,7 @@
 import { useTRPC } from "@/trpc/client";
 import { useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { useProductFilters } from "../../hooks/use-product-filters";
-import { PoductCard, ProductCardSkeleton } from "./product-card";
+import { ProductCard, ProductCardSkeleton } from "./product-card";
 import { DEFAULT_LIMIT } from "@/constants";
 import { Button } from "@/components/ui/button";
 import { InboxIcon } from "lucide-react";
@@ -58,15 +58,13 @@ export const ProductList = ({ category, tenantSlug, narrowView }: Props) => {
         {data?.pages
           .flatMap((page) => page.docs)
           .map((product) => (
-            <PoductCard
+            <ProductCard
               key={product.id}
               id={product.id}
               name={product.name}
               imageUrl={product.image?.url}
               tenantSlug={product.tenant?.slug}
               tenantImageUrl={product.tenant?.image?.url}
-              reviewRating={product.reviewRating}
-              reviewCount={product.reviewCount}
               price={product.price}
             />
           ))}

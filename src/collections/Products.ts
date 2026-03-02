@@ -3,41 +3,66 @@ import { Tenant } from "@/payload-types";
 import { CollectionConfig } from "payload";
 
 export const Products: CollectionConfig = {
-  slug: "products",
+  slug: "products", // Kept intact to protect your tRPC routers from breaking
+  labels: {
+    singular: "Deliverable & Invoice",
+    plural: "Deliverables & Invoices",
+  },
   access: {
     create: ({ req, id }) => {
       if (isSuperAdmin(req.user)) return true;
-
       const tenant = req.user?.tenants?.[0]?.tenant as Tenant;
-
       return Boolean(tenant?.stripeDetailsSubmitted);
     },
     delete: ({ req }) => isSuperAdmin(req.user),
   },
   admin: {
     useAsTitle: "name",
-    description: "You must verify your account before creating products",
+    description:
+      "Create invoices and attach final secure deliverables for your clients.",
   },
   fields: [
     {
       name: "name",
       type: "text",
+      label: "Invoice / Project Title",
       required: true,
+      admin: {
+        description: 'e.g., "Q1 Website Redesign" or "March SEO Retainer"',
+      },
     },
     {
       name: "description",
+      label: "Scope of Work",
       type: "richText",
     },
     {
       name: "price",
       type: "number",
+      label: "Invoice Amount",
       required: true,
       admin: {
-        description: "Price in USD",
+        description: "Amount in USD",
       },
     },
+    // --- NEW B2B AGENCY FIELDS START ---
+    {
+      name: "dueDate",
+      type: "date",
+      label: "Invoice Due Date",
+      required: true,
+    },
+    {
+      name: "paymentStatus",
+      type: "select",
+      label: "Status",
+      options: ["Draft", "Pending", "Paid", "Overdue"],
+      defaultValue: "Pending",
+    },
+    // --- NEW B2B AGENCY FIELDS END ---
     {
       name: "category",
+      label: "Service Category",
       type: "relationship",
       relationTo: "categories",
       hasMany: false,
@@ -50,32 +75,28 @@ export const Products: CollectionConfig = {
     },
     {
       name: "image",
+      label: "Preview Thumbnail",
       type: "upload",
       relationTo: "media",
       required: false,
     },
     {
-      name: "refundpolicy",
-      type: "select",
-      options: ["30-day", "14-day", "7-day", "3-day", "1-day", "no-refunds"],
-      defaultValue: "30-day",
-    },
-    {
       name: "content",
+      label: "Final Deliverables (Locked)",
       type: "richText",
       admin: {
         description:
-          "Protected content only visible to the customers after purchase. Add product documentation, downloadable files, getting starter guides, and bonus matierial. Support markdown formatting",
+          "Protected content. Add secure Figma links, downloadable ZIP files, or final assets here. The client can ONLY access this AFTER paying the invoice.",
       },
     },
     {
       name: "isPrivate",
-      label: "Private",
+      label: "Draft Mode",
       defaultValue: false,
       type: "checkbox",
       admin: {
         description:
-          "If checked, this product will not be shown on the public storefront",
+          "If checked, the client will not see this invoice in their portal yet.",
       },
     },
     {
@@ -84,7 +105,8 @@ export const Products: CollectionConfig = {
       defaultValue: false,
       type: "checkbox",
       admin: {
-        description: "If checked, this product will be archived",
+        description:
+          "If checked, this invoice will be hidden from the active dashboard.",
       },
     },
   ],
