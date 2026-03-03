@@ -24,7 +24,7 @@ export const productsRouter = createTRPCRouter({
         id: input.id,
         depth: 2,
         select: {
-          content: false, // We keep the final deliverables locked here
+          content: false,
         },
       });
 
@@ -37,7 +37,11 @@ export const productsRouter = createTRPCRouter({
 
       let isPurchased = false;
 
-      // Check if the client has paid this invoice
+      const productTenantId =
+        typeof product.tenant === "string"
+          ? product.tenant
+          : product.tenant?.id;
+
       if (session.user) {
         const ordersData = await ctx.db.find({
           collection: "orders",
@@ -61,7 +65,23 @@ export const productsRouter = createTRPCRouter({
         isPurchased = !!ordersData.docs[0];
       }
 
-      // STRIPPED: Removed all E-commerce review and rating logic
+      const isTenantMember = Boolean(
+        productTenantId &&
+        session.user?.tenants?.some((membership) => {
+          const tenantId =
+            typeof membership.tenant === "string"
+              ? membership.tenant
+              : membership.tenant?.id;
+          return tenantId === productTenantId;
+        })
+      );
+
+      if (product.isPrivate && !isPurchased && !isTenantMember) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Invoice not found",
+        });
+      }
 
       return {
         ...product,
@@ -70,7 +90,6 @@ export const productsRouter = createTRPCRouter({
         tenant: product.tenant as Tenant & { image: Media | null },
       };
     }),
-
   getMany: baseProcedure
     .input(
       z.object({
@@ -109,19 +128,57 @@ export const productsRouter = createTRPCRouter({
         where.price = { less_than_equal: input.maxPrice };
       }
 
+      // 🛡️ CODERABBIT IDOR PATCH #2: Secure Tenant-Level Discovery
       if (input.tenantSlug) {
+        // Step 1: Filter by the requested tenant
         where["tenant.slug"] = { equals: input.tenantSlug };
+
+        // Step 2: Check who is actually asking for this data
+        const headers = await getHeaders();
+        const session = await ctx.db.auth({ headers });
+        let isTenantMember = false;
+
+        if (session?.user) {
+          // Look up the actual Tenant ID using the slug so we can compare it
+          const tenantData = await ctx.db.find({
+            collection: "tenants",
+            where: { slug: { equals: input.tenantSlug } },
+            limit: 1,
+          });
+
+          const targetTenant = tenantData.docs[0];
+
+          if (targetTenant) {
+            // Check if this specific user has this specific tenant in their membership list
+            isTenantMember = Boolean(
+              session.user.tenants?.some((membership) => {
+                const membershipId =
+                  typeof membership.tenant === "string"
+                    ? membership.tenant
+                    : membership.tenant?.id;
+                return membershipId === targetTenant.id;
+              })
+            );
+          }
+        }
+
+        // Step 3: THE LOCKDOWN
+        // If they are NOT a member of this company, force the database to hide all private invoices.
+        // They will only see public data, keeping the private retainers 100% secure.
+        if (!isTenantMember) {
+          where["isPrivate"] = { not_equals: true };
+        }
       } else {
+        // If they didn't ask for a specific tenant, they are just browsing the public homepage.
+        // Never show private invoices here!
         where["isPrivate"] = { not_equals: true };
       }
 
       // 🛡️ CODERABBIT FIX #2: SECURE THE FINANCIAL FILTER
       if (input.paymentStatus) {
-        // Only fetch the session if they are trying to access financial filters
         const headers = await getHeaders();
         const session = await ctx.db.auth({ headers });
 
-        // If they aren't logged in, kick them out!
         if (!session?.user) {
           throw new TRPCError({
             code: "UNAUTHORIZED",
@@ -184,7 +241,7 @@ export const productsRouter = createTRPCRouter({
         page: input.cursor,
         limit: input.limit,
         select: {
-          content: false, // Keep deliverables locked
+          content: false,
         },
       });
 

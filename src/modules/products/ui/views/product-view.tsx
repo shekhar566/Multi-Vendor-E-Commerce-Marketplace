@@ -51,13 +51,18 @@ export const ProductView = ({ productId, tenantSlug }: ProductViewProps) => {
     };
   }, []);
 
-  const handleCopy = () => {
-    setIsCopied(true);
-    navigator.clipboard.writeText(window.location.href);
-    toast.success("Invoice link copied");
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setIsCopied(true);
+      toast.success("Invoice link copied");
 
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => setIsCopied(false), 3000);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => setIsCopied(false), 3000);
+    } catch {
+      setIsCopied(false);
+      toast.error("Failed to copy invoice link");
+    }
   };
   // --- END CODERABBIT FIX ---
 
@@ -166,6 +171,13 @@ export const ProductView = ({ productId, tenantSlug }: ProductViewProps) => {
                   />
                   {/* Hooked up the new clean handleCopy function right here! */}
                   <Button
+                    type="button"
+                    aria-label={
+                      isCopied ? "Invoice link copied" : "Copy invoice link"
+                    }
+                    title={
+                      isCopied ? "Invoice link copied" : "Copy invoice link"
+                    }
                     className="size-12 shrink-0 cursor-pointer bg-white border shadow-sm hover:bg-neutral-50 text-neutral-900"
                     onClick={handleCopy}
                     disabled={isCopied}
