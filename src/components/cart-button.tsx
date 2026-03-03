@@ -51,7 +51,7 @@ export const CartButton = ({ tenantSlug, productId, isPurchased }: Props) => {
       {inCart ? (
         <>
           <CheckCircle2Icon className="size-4 text-emerald-600" />
-          Ready to Pay (Go to Checkout)
+          Added to Invoice (Click to Remove)
         </>
       ) : (
         <>

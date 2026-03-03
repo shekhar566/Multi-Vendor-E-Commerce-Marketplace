@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency, generateTenantURL } from "@/lib/utils";
 import { useTRPC } from "@/trpc/client";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { useState, useRef, useEffect } from "react";
+import { toast } from "sonner";
 import {
   CheckCheckIcon,
   LinkIcon,
@@ -15,8 +17,6 @@ import dynamic from "next/dynamic";
 import { RichText } from "@payloadcms/richtext-lexical/react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
-import { toast } from "sonner";
 
 const CartButton = dynamic(
   () => import("@/components/cart-button").then((mod) => mod.CartButton),
@@ -41,7 +41,25 @@ export const ProductView = ({ productId, tenantSlug }: ProductViewProps) => {
     trpc.products.getOne.queryOptions({ id: productId })
   );
 
+  // --- START CODERABBIT FIX #1: MEMORY LEAK ---
   const [isCopied, setIsCopied] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
+  const handleCopy = () => {
+    setIsCopied(true);
+    navigator.clipboard.writeText(window.location.href);
+    toast.success("Invoice link copied");
+
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => setIsCopied(false), 3000);
+  };
+  // --- END CODERABBIT FIX ---
 
   // Safely format the Due Date we added to the Payload CMS
   const formattedDueDate = data.dueDate
@@ -63,7 +81,7 @@ export const ProductView = ({ productId, tenantSlug }: ProductViewProps) => {
   return (
     <div className="px-4 lg:px-12 py-10">
       <div className="border rounded-sm bg-white overflow-hidden shadow-sm">
-        {/* Header Banner - Replaced E-commerce Aspect Ratio with a cleaner Header */}
+        {/* Header Banner */}
         <div className="relative aspect-[5/1] border-b bg-neutral-50 flex items-center justify-center overflow-hidden">
           {data.image?.url ? (
             <Image
@@ -146,14 +164,10 @@ export const ProductView = ({ productId, tenantSlug }: ProductViewProps) => {
                     productId={productId}
                     tenantSlug={tenantSlug}
                   />
+                  {/* Hooked up the new clean handleCopy function right here! */}
                   <Button
                     className="size-12 shrink-0 cursor-pointer bg-white border shadow-sm hover:bg-neutral-50 text-neutral-900"
-                    onClick={() => {
-                      setIsCopied(true);
-                      navigator.clipboard.writeText(window.location.href);
-                      toast.success("Invoice link copied");
-                      setTimeout(() => setIsCopied(false), 3000);
-                    }}
+                    onClick={handleCopy}
                     disabled={isCopied}
                   >
                     {isCopied ? (

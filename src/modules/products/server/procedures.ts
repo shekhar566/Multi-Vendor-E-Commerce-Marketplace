@@ -83,7 +83,7 @@ export const productsRouter = createTRPCRouter({
         tags: z.array(z.string()).nullable().optional(),
         sort: z.enum(sortValues).nullable().optional(),
         tenantSlug: z.string().nullable().optional(),
-        paymentStatus: z.string().nullable().optional(), // NEW: Added ability to filter by Status
+        paymentStatus: z.string().nullable().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -115,8 +115,20 @@ export const productsRouter = createTRPCRouter({
         where["isPrivate"] = { not_equals: true };
       }
 
-      // NEW: Apply the payment status filter if the frontend asks for it
+      // 🛡️ CODERABBIT FIX #2: SECURE THE FINANCIAL FILTER
       if (input.paymentStatus) {
+        // Only fetch the session if they are trying to access financial filters
+        const headers = await getHeaders();
+        const session = await ctx.db.auth({ headers });
+
+        // If they aren't logged in, kick them out!
+        if (!session?.user) {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: "You must be authenticated to filter financial statuses.",
+          });
+        }
+
         where["paymentStatus"] = { equals: input.paymentStatus };
       }
 
@@ -172,11 +184,9 @@ export const productsRouter = createTRPCRouter({
         page: input.cursor,
         limit: input.limit,
         select: {
-          content: false,
+          content: false, // Keep deliverables locked
         },
       });
-
-      // STRIPPED: Removed the massive Promise.all that fetched reviews for every single product in the list
 
       return {
         ...data,

@@ -50,7 +50,6 @@ export const Products: CollectionConfig = {
       name: "dueDate",
       type: "date",
       label: "Invoice Due Date",
-      required: true,
     },
     {
       name: "paymentStatus",

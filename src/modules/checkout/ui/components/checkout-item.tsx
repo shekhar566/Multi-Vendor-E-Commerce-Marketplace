@@ -64,6 +64,7 @@ export const CheckoutItem = ({
       <div className="flex flex-col items-end justify-center gap-1 shrink-0 ml-4">
         <p className="font-bold text-neutral-900">{formatCurrency(price)}</p>
         <button
+          type="button"
           className="text-xs font-medium text-neutral-400 hover:text-red-600 flex items-center gap-1 transition-colors cursor-pointer"
           onClick={onRemove}
         >

@@ -52,7 +52,7 @@ export const Navbar = ({ slug }: Props) => {
           ) : (
             <div className="size-8 rounded-md bg-neutral-100 border flex items-center justify-center">
               <span className="text-xs font-bold text-neutral-400">
-                {data.name.charAt(0)}
+                {data.name?.charAt(0) || "?"}
               </span>
             </div>
           )}
