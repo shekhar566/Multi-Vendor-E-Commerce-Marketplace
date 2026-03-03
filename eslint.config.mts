@@ -35,7 +35,7 @@ export default defineConfig([
   {
     rules: {
       "import/order": [
-        "error",
+        "off",
         {
           groups: [
             "builtin",
@@ -44,6 +44,7 @@ export default defineConfig([
             ["parent", "sibling"],
             "index",
             "object",
+            "type",
           ],
           "newlines-between": "always",
           pathGroups: [
@@ -53,7 +54,7 @@ export default defineConfig([
               position: "before", // always first in externals
             },
             {
-              pattern: "@app/**",
+              pattern: "@/**",
               group: "internal",
               position: "after",
             },

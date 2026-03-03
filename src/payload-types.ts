@@ -75,6 +75,7 @@ export interface Config {
     tenants: Tenant;
     orders: Order;
     reviews: Review;
+    'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -93,6 +94,7 @@ export interface Config {
     tenants: TenantsSelect<false> | TenantsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     reviews: ReviewsSelect<false> | ReviewsSelect<true>;
+    'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -100,12 +102,14 @@ export interface Config {
   db: {
     defaultIDType: string;
   };
+  fallbackLocale: null;
   globals: {};
   globalsSelect: {};
   locale: null;
-  user: User & {
-    collection: 'users';
+  widgets: {
+    collections: CollectionsWidget;
   };
+  user: User;
   jobs: {
     tasks: unknown;
     workflows: unknown;
@@ -160,6 +164,7 @@ export interface User {
       }[]
     | null;
   password?: string | null;
+  collection: 'users';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -168,20 +173,32 @@ export interface User {
 export interface Tenant {
   id: string;
   /**
-   * This is the name of the store (e.g. Next's Store )
+   * This is the name of the client's company (e.g. Apex Law )
    */
   name: string;
   /**
-   * This is the subdomain for the store (e.g. [slug].funroad.com )
+   * This is the secure URL slug for the client portal (e.g. [slug].youragency.com )
    */
   slug: string;
+  /**
+   * The main decision maker or point of contact (e.g., Sarah the CMO).
+   */
+  contactName?: string | null;
+  /**
+   * Where the invoices and notifications will be sent.
+   */
+  contactEmail?: string | null;
+  /**
+   * e.g., Healthcare, SaaS, E-commerce, Real Estate
+   */
+  industry?: string | null;
   image?: (string | null) | Media;
   /**
-   * Stripe Account ID associated with your shop
+   * Stripe Account ID for processing payments for this client
    */
   stripeAccountId: string;
   /**
-   * You cannot create products until you submit your Stripe details
+   * Indicates if the client's Stripe payment gateway is active
    */
   stripeDetailsSubmitted?: boolean | null;
   updatedAt: string;
@@ -225,7 +242,7 @@ export interface Category {
   createdAt: string;
 }
 /**
- * You must verify your account before creating products
+ * Create invoices and attach final secure deliverables for your clients.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "products".
@@ -233,12 +250,15 @@ export interface Category {
 export interface Product {
   id: string;
   tenant?: (string | null) | Tenant;
+  /**
+   * e.g., "Q1 Website Redesign" or "March SEO Retainer"
+   */
   name: string;
   description?: {
     root: {
       type: string;
       children: {
-        type: string;
+        type: any;
         version: number;
         [k: string]: unknown;
       }[];
@@ -250,21 +270,22 @@ export interface Product {
     [k: string]: unknown;
   } | null;
   /**
-   * Price in USD
+   * Amount in USD
    */
   price: number;
+  dueDate: string;
+  paymentStatus?: ('Draft' | 'Pending' | 'Paid' | 'Overdue') | null;
   category?: (string | null) | Category;
   tags?: (string | Tag)[] | null;
   image?: (string | null) | Media;
-  refundpolicy?: ('30-day' | '14-day' | '7-day' | '3-day' | '1-day' | 'no-refunds') | null;
   /**
-   * Protected content only visible to the customers after purchase. Add product documentation, downloadable files, getting starter guides, and bonus matierial. Support markdown formatting
+   * Protected content. Add secure Figma links, downloadable ZIP files, or final assets here. The client can ONLY access this AFTER paying the invoice.
    */
   content?: {
     root: {
       type: string;
       children: {
-        type: string;
+        type: any;
         version: number;
         [k: string]: unknown;
       }[];
@@ -276,11 +297,11 @@ export interface Product {
     [k: string]: unknown;
   } | null;
   /**
-   * If checked, this product will not be shown on the public storefront
+   * If checked, the client will not see this invoice in their portal yet.
    */
   isPrivate?: boolean | null;
   /**
-   * If checked, this product will be archived
+   * If checked, this invoice will be hidden from the active dashboard.
    */
   isArchived?: boolean | null;
   updatedAt: string;
@@ -329,6 +350,23 @@ export interface Review {
   user: string | User;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-kv".
+ */
+export interface PayloadKv {
+  id: string;
+  key: string;
+  data:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -481,10 +519,11 @@ export interface ProductsSelect<T extends boolean = true> {
   name?: T;
   description?: T;
   price?: T;
+  dueDate?: T;
+  paymentStatus?: T;
   category?: T;
   tags?: T;
   image?: T;
-  refundpolicy?: T;
   content?: T;
   isPrivate?: T;
   isArchived?: T;
@@ -508,6 +547,9 @@ export interface TagsSelect<T extends boolean = true> {
 export interface TenantsSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
+  contactName?: T;
+  contactEmail?: T;
+  industry?: T;
   image?: T;
   stripeAccountId?: T;
   stripeDetailsSubmitted?: T;
@@ -541,6 +583,14 @@ export interface ReviewsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-kv_select".
+ */
+export interface PayloadKvSelect<T extends boolean = true> {
+  key?: T;
+  data?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents_select".
  */
 export interface PayloadLockedDocumentsSelect<T extends boolean = true> {
@@ -570,6 +620,16 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "collections_widget".
+ */
+export interface CollectionsWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
