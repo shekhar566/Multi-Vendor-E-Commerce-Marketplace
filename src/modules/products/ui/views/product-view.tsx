@@ -67,13 +67,16 @@ export const ProductView = ({ productId, tenantSlug }: ProductViewProps) => {
   // --- END CODERABBIT FIX ---
 
   // Safely format the Due Date we added to the Payload CMS
-  const formattedDueDate = data.dueDate
-    ? new Date(data.dueDate as string).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
-    : "Upon Receipt";
+  const dueDate = data.dueDate ? new Date(data.dueDate as string) : null;
+  const formattedDueDate =
+    dueDate && !Number.isNaN(dueDate.getTime())
+      ? dueDate.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          timeZone: "UTC",
+        })
+      : "Upon Receipt";
 
   // Dynamic styling for the Invoice Status badge
   const statusColor =
