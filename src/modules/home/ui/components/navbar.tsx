@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { NavbarSidebar } from "./navbarSidebar";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
+import { LogoutButton } from "@/components/LogoutButton";
 
 interface NavbarItemProps {
   href: string;
@@ -32,7 +33,6 @@ const NavbarItem = ({ href, children, isActive }: NavbarItemProps) => {
   );
 };
 
-// Simplified for a B2B Agency Landing Page
 const navbarItems = [
   { href: "/", children: "Overview" },
   { href: "/features", children: "Services" },
@@ -53,7 +53,7 @@ export const Navbar = () => {
           <CommandIcon className="size-5 text-white" />
         </div>
         <span className="text-xl font-bold tracking-tight text-neutral-900">
-          AgencyPortal
+          ShipSpace
         </span>
       </Link>
 
@@ -63,6 +63,7 @@ export const Navbar = () => {
         onOpenChange={setisSidebaropen}
       />
 
+      {/* Center Links (Hidden on mobile) */}
       <div className="items-center gap-1 hidden lg:flex">
         {navbarItems.map((item) => (
           <NavbarItem
@@ -75,13 +76,18 @@ export const Navbar = () => {
         ))}
       </div>
 
+      {/* Right Side Auth / Actions */}
       {session.data?.user ? (
-        <div className="hidden lg:flex">
+        <div className="hidden lg:flex items-center gap-4">
+          <span className="text-sm font-medium text-neutral-500">
+            {session.data.user.email}
+          </span>
           <Button
             asChild
             className="rounded-full bg-neutral-900 text-white hover:bg-neutral-800 transition-colors px-6"
           >
-            <Link href="/admin">Admin Dashboard</Link>
+            {/* <Link href="/">Client Portal</Link> */}
+            <LogoutButton />
           </Button>
         </div>
       ) : (
@@ -106,6 +112,7 @@ export const Navbar = () => {
         </div>
       )}
 
+      {/* Mobile Menu Toggle */}
       <div className="flex lg:hidden items-center justify-center">
         <Button
           variant="ghost"

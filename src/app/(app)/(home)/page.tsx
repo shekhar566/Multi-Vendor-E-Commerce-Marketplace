@@ -37,18 +37,37 @@ const HomePage = () => {
         </p>
 
         {/* Calls to Action (Now Session Aware!) */}
+        {/* Calls to Action (Now Session and Role Aware!) */}
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
           {session?.user ? (
-            <Button
-              size="lg"
-              className="w-full sm:w-auto bg-neutral-900 text-white hover:bg-neutral-800 text-base h-12 px-8"
-              asChild
-            >
-              <Link href="/admin">
-                Go to Admin Dashboard <ArrowRightIcon className="ml-2 size-4" />
-              </Link>
-            </Button>
+            // Check if the logged-in user is an admin
+            session.user.roles?.includes("super-admin") ? (
+              <Button
+                size="lg"
+                className="w-full sm:w-auto bg-neutral-900 text-white hover:bg-neutral-800 text-base h-12 px-8"
+                asChild
+              >
+                <Link href="/admin">
+                  Go to Admin Dashboard{" "}
+                  <ArrowRightIcon className="ml-2 size-4" />
+                </Link>
+              </Button>
+            ) : (
+              // If they are NOT an admin, they are a client!
+              <Button
+                size="lg"
+                className="w-full sm:w-auto bg-emerald-600 text-white hover:bg-emerald-500 text-base h-12 px-8"
+                asChild
+              >
+                <Link href="/admin">
+                  {" "}
+                  {/* Change /portal to whatever your client dashboard route is */}
+                  Go to Client Portal <ArrowRightIcon className="ml-2 size-4" />
+                </Link>
+              </Button>
+            )
           ) : (
+            // Logged out state
             <>
               <Button
                 size="lg"
