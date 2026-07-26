@@ -24,9 +24,6 @@ export const ProductListView = ({
         </div>
       )}
 
-      {/* We ripped out the 6-column / 2-column grid that held the E-commerce sidebar.
-        Now, the invoice list takes up the full width of the dashboard beautifully. 
-      */}
       <div className="w-full pt-4">
         <Suspense fallback={<ProductListSkeleton narrowView={narrowView} />}>
           <ProductList

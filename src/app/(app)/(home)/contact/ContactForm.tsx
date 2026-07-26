@@ -18,7 +18,7 @@ export const ContactForm = () => {
           </label>
           <input
             id="first-name"
-            placeholder="John"
+            placeholder="Nick"
             className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-white shadow-inner focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 placeholder:text-zinc-700 transition-all"
           />
         </div>
@@ -31,7 +31,7 @@ export const ContactForm = () => {
           </label>
           <input
             id="last-name"
-            placeholder="Doe"
+            placeholder="Patel"
             className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-white shadow-inner focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 placeholder:text-zinc-700 transition-all"
           />
         </div>
@@ -46,7 +46,7 @@ export const ContactForm = () => {
         <input
           id="email"
           type="email"
-          placeholder="john@agency.com"
+          placeholder="nick@agency.com"
           className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-white shadow-inner focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 placeholder:text-zinc-700 transition-all"
         />
       </div>

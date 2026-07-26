@@ -6,18 +6,21 @@ import z from "zod";
 import { DEFAULT_LIMIT } from "@/constants";
 import { sortValues } from "@/modules/products/search-params";
 import { Category, Media, Tenant } from "@/payload-types";
-import { baseProcedure, createTRPCRouter } from "@/trpc/init";
+import {
+  baseProcedure,
+  protectedProcedure,
+  createTRPCRouter,
+} from "@/trpc/init";
 
 export const productsRouter = createTRPCRouter({
-  getOne: baseProcedure
+  getOne: protectedProcedure
     .input(
       z.object({
         id: z.string(),
       })
     )
     .query(async ({ ctx, input }) => {
-      const headers = await getHeaders();
-      const session = await ctx.db.auth({ headers });
+      const { session } = ctx;
 
       const product = await ctx.db.findByID({
         collection: "products",
@@ -28,42 +31,17 @@ export const productsRouter = createTRPCRouter({
         },
       });
 
-      if (product.isArchived) {
+      if (!product || product.isArchived) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Invoice not found",
+          message: "Deliverable not found",
         });
       }
-
-      let isPurchased = false;
 
       const productTenantId =
         typeof product.tenant === "string"
           ? product.tenant
           : product.tenant?.id;
-
-      if (session.user) {
-        const ordersData = await ctx.db.find({
-          collection: "orders",
-          pagination: false,
-          limit: 1,
-          where: {
-            and: [
-              {
-                product: {
-                  equals: input.id,
-                },
-              },
-              {
-                user: {
-                  equals: session.user.id,
-                },
-              },
-            ],
-          },
-        });
-        isPurchased = !!ordersData.docs[0];
-      }
 
       const isTenantMember = Boolean(
         productTenantId &&
@@ -76,10 +54,23 @@ export const productsRouter = createTRPCRouter({
         })
       );
 
-      if (product.isPrivate && !isPurchased && !isTenantMember) {
+      const ordersData = await ctx.db.find({
+        collection: "orders",
+        pagination: false,
+        limit: 1,
+        where: {
+          and: [
+            { product: { equals: input.id } },
+            { user: { equals: session.user.id } },
+          ],
+        },
+      });
+      const isPurchased = !!ordersData.docs[0];
+
+      if (!isPurchased && !isTenantMember) {
         throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Invoice not found",
+          code: "FORBIDDEN",
+          message: "You do not have permission to view this tenant's data.",
         });
       }
 
@@ -90,6 +81,7 @@ export const productsRouter = createTRPCRouter({
         tenant: product.tenant as Tenant & { image: Media | null },
       };
     }),
+
   getMany: baseProcedure
     .input(
       z.object({
@@ -111,8 +103,8 @@ export const productsRouter = createTRPCRouter({
           not_equals: true,
         },
       };
-      let sort: Sort = "-createdAt";
 
+      let sort: Sort = "-createdAt";
       if (input.sort === "curated" || input.sort === "trending")
         sort = "-createdAt";
       if (input.sort === "hot_and_new") sort = "+createdAt";
@@ -128,18 +120,14 @@ export const productsRouter = createTRPCRouter({
         where.price = { less_than_equal: input.maxPrice };
       }
 
-      // 🛡️ CODERABBIT IDOR PATCH #2: Secure Tenant-Level Discovery
       if (input.tenantSlug) {
-        // Step 1: Filter by the requested tenant
         where["tenant.slug"] = { equals: input.tenantSlug };
 
-        // Step 2: Check who is actually asking for this data
         const headers = await getHeaders();
         const session = await ctx.db.auth({ headers });
         let isTenantMember = false;
 
         if (session?.user) {
-          // Look up the actual Tenant ID using the slug so we can compare it
           const tenantData = await ctx.db.find({
             collection: "tenants",
             where: { slug: { equals: input.tenantSlug } },
@@ -149,7 +137,6 @@ export const productsRouter = createTRPCRouter({
           const targetTenant = tenantData.docs[0];
 
           if (targetTenant) {
-            // Check if this specific user has this specific tenant in their membership list
             isTenantMember = Boolean(
               session.user.tenants?.some((membership) => {
                 const membershipId =
@@ -162,19 +149,13 @@ export const productsRouter = createTRPCRouter({
           }
         }
 
-        // Step 3: THE LOCKDOWN
-        // If they are NOT a member of this company, force the database to hide all private invoices.
-        // They will only see public data, keeping the private retainers 100% secure.
         if (!isTenantMember) {
           where["isPrivate"] = { not_equals: true };
         }
       } else {
-        // If they didn't ask for a specific tenant, they are just browsing the public homepage.
-        // Never show private invoices here!
         where["isPrivate"] = { not_equals: true };
       }
 
-      // 🛡️ CODERABBIT FIX #2: SECURE THE FINANCIAL FILTER
       if (input.paymentStatus) {
         const headers = await getHeaders();
         const session = await ctx.db.auth({ headers });
@@ -182,10 +163,9 @@ export const productsRouter = createTRPCRouter({
         if (!session?.user) {
           throw new TRPCError({
             code: "UNAUTHORIZED",
-            message: "You must be authenticated to filter financial statuses.",
+            message: "Authentication required to view financial data.",
           });
         }
-
         where["paymentStatus"] = { equals: input.paymentStatus };
       }
 
@@ -195,11 +175,7 @@ export const productsRouter = createTRPCRouter({
           limit: 1,
           depth: 1,
           pagination: false,
-          where: {
-            slug: {
-              equals: input.category,
-            },
-          },
+          where: { slug: { equals: input.category } },
         });
 
         const formattedData = categoriesData.docs.map((doc) => ({
@@ -215,9 +191,7 @@ export const productsRouter = createTRPCRouter({
 
         if (parentCategory) {
           subcategoriesSlugs.push(
-            ...parentCategory.subcategories.map(
-              (subcategory) => subcategory.slug
-            )
+            ...parentCategory.subcategories.map((sub) => sub.slug)
           );
           where["category.slug"] = {
             in: [parentCategory.slug, ...subcategoriesSlugs],
@@ -240,9 +214,7 @@ export const productsRouter = createTRPCRouter({
         sort,
         page: input.cursor,
         limit: input.limit,
-        select: {
-          content: false,
-        },
+        select: { content: false },
       });
 
       return {
